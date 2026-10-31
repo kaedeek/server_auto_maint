@@ -1,0 +1,12 @@
+[project]
+name = "server-auto-maint"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "discord-py>=2.7.1",
+    "paramiko>=5.1.0",
+    "python-dotenv>=1.2.4",
+    "versalog>=3.0.1",
+]
