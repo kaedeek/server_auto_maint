@@ -1,9 +1,16 @@
+from VersaLog import *
 from dotenv import dotenv_values
 from pathlib import Path
 
 import paramiko
 import os
 import shlex
+
+logger = VersaLog(
+enum="detailed",
+tag=["BASE", "SSH CLIENT"],
+show_tag=True,
+)
 
 ENV_PATH = Path(__file__).resolve().parents[1] / ".env"
 ENV = dotenv_values(ENV_PATH)
@@ -17,12 +24,15 @@ class SSHClient:
         self.password = str(ENV.get("pass") or "")
 
         if not self.host:
+            logger.error("SSH host is empty.")
             raise ValueError("SSH host is empty.")
 
         if not self.username:
+            logger.error("SSH username is empty.")
             raise ValueError("SSH username is empty.")
 
         if not self.password:
+            logger.error("SSH password is empty.")
             raise ValueError("SSH password is empty.")
 
 
@@ -41,6 +51,7 @@ class SSHClient:
         }
 
         if command not in allowed_commands:
+            logger.error("Unsupported command.")
             raise ValueError("Unsupported command.")
 
         client = paramiko.SSHClient()
