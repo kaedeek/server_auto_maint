@@ -48,6 +48,7 @@ class SSHClient:
             ),
             "update": "sudo -n apt-get update",
             "upgrade": "sudo -n apt-get upgrade -y",
+            "security": "sudo lynis audit system --quick",
         }
 
         if command not in allowed_commands:

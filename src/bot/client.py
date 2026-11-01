@@ -100,6 +100,10 @@ class Client(commands.Bot):
         if content == "status":
             await self._run_ssh_command(message, "status")
             return
+
+        if content == "security":
+            await self._run_security_audit(message)
+            return
         
         if content == "update":
             await self._run_ssh_command(message, "update")
@@ -156,6 +160,89 @@ class Client(commands.Bot):
                 f"SSHコマンド `{command}` の実行に失敗しました。\n"
                 f"エラー種別: `{type(exc).__name__}`\n"
                 f"詳細: `{str(exc)[:1000]}`"
+            )
+
+    async def _run_security_audit(
+            self,
+            message: discord.Message,
+        ) -> None:
+        
+        await message.reply("🔐 セキュリティ診断を実行しています……")
+        
+        try:
+            exit_code, output = await asyncio.to_thread(
+                SSHClient().execute,
+                "security",
+            )
+            
+            hardening_index = "取得できませんでした"
+            tests_performed = "取得できませんでした"
+            warnings: list[str] = []
+            suggestions: list[str] = []
+            
+            lines = output.splitlines()
+            section = None
+            
+            for line in lines:
+                line = line.strip()
+                
+                if "Warnings (" in line:
+                    section = "warnings"
+                    continue
+                
+                if "Suggestions (" in line:
+                    section = "suggestions"
+                    continue
+                
+                if section == "warnings" and line.startswith("!"):
+                    warnings.append(line.lstrip("!").strip())
+                    
+                elif section == "suggestions" and line.startswith("*"):
+                    suggestions.append(line.lstrip("*").strip())
+                    
+                if "Hardening index :" in line:
+                    hardening_index = line.split(":", 1)[1].strip()
+                    
+                if "Tests performed :" in line:
+                    tests_performed = line.split(":", 1)[1].strip()
+                    
+            result = (
+                "🔐 **セキュリティ診断レポート**\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"📊 **セキュリティ強化指数：** `{hardening_index}`\n"
+                f"🧪 **検査実施数：** `{tests_performed}`\n\n"
+                f"⚠️ **警告：** `{len(warnings)} 件`\n"
+                f"💡 **改善提案：** `{len(suggestions)} 件`\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+            )
+            
+            if warnings:
+                result += "\n⚠️ **Warnings**\n"
+                for warning in warnings:
+                    result += f"• {warning}\n"
+                    
+            if suggestions:
+                result += "\n💡 **Suggestions（先頭10件）**\n"
+                for suggestion in suggestions[:10]:
+                    result += f"• {suggestion}\n"
+            result += "\n📝 詳細はサーバーのLynisログを確認してください。"
+            
+            await self.send_long_message(message, result)
+            
+            if exit_code != 0:
+                logger.error(
+                    f"Lynis audit failed with exit code {exit_code}."
+                )
+                
+        except Exception as exc:
+            logger.error(
+                f"Security audit failed: "
+                f"{type(exc).__name__}: {exc}"
+            )
+            
+            await message.reply(
+                "❌ セキュリティ診断に失敗しました。\n"
+                f"エラー: `{type(exc).__name__}`"
             )
             
     async def _request_upgrade_confirmation(
