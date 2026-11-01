@@ -75,6 +75,12 @@ class Client(commands.Bot):
         for start in range(0, len(msg), 1900):
             await channel.send(msg[start:start + 1900])
         logger.info("Message sent successfully.")
+
+    async def send_long_message(self, message: discord.Message, content: str) -> None:
+        max_length = 1900
+        
+        for start in range(0, len(content), max_length):
+            await message.reply(content[start:start + max_length])
         
     async def on_ready(self) -> None:
         logger.info(f"Logged in as {self.user}")
@@ -115,8 +121,9 @@ class Client(commands.Bot):
     async def _run_ssh_command(
             self,
             message: discord.Message,
-            command: str,
+            command: str
         ) -> None:
+        
         await message.reply(f"`{command}` を実行しています……")
         
         try:
@@ -128,14 +135,15 @@ class Client(commands.Bot):
             result = (
                 f"**コマンド:** `{command}`\n"
                 f"**終了コード:** `{exit_code}`\n"
-                f"```text\n{output[:7000]}\n```"
+                f"```text\n{output}\n```"
             )
             
-            await message.reply(result)
+            await self.send_long_message(message, result)
             
             if exit_code != 0:
                 logger.error(
-                    f"SSH command '{command}' failed with exit code {exit_code}."
+                    f"SSH command '{command}' failed "
+                    f"with exit code {exit_code}."
                 )
                 
         except Exception as exc:
@@ -143,6 +151,7 @@ class Client(commands.Bot):
                 f"SSH command '{command}' failed: "
                 f"{type(exc).__name__}: {exc}"
             )
+            
             await message.reply(
                 f"SSHコマンド `{command}` の実行に失敗しました。\n"
                 f"エラー種別: `{type(exc).__name__}`\n"
