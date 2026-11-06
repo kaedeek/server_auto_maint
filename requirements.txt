@@ -1,0 +1,4 @@
+discord.py
+paramiko
+python-dotenv
+VersaLog
