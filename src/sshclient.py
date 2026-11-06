@@ -46,6 +46,16 @@ class SSHClient:
                 "printf '%s\\n' '=== DISK ==='; "
                 "df -h /"
             ),
+
+            "monitor": (
+                "printf '%s\\n' '=== CPU ==='; "
+                "top -bn1 | grep 'Cpu(s)'; "
+                "printf '%s\\n' '=== MEMORY ==='; "
+                "free | awk '/Mem:/ {printf \"%.1f\\n\", $3/$2*100}'; "
+                "printf '%s\\n' '=== DISK ==='; "
+                "df -P / | awk 'NR==2 {print $5}'"
+            ),
+            
             "update": "sudo -n apt-get update",
             "upgrade": "sudo -n apt-get upgrade -y",
             "security": "sudo lynis audit system --quick",
